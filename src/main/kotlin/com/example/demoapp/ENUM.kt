@@ -1,0 +1,11 @@
+package com.example.demoapp
+
+
+enum class ENUM(val code: Int) {
+    USER_NAME_EXISTS(100),
+    USER_NOT_FOUND(103),
+    PRODUCT_NOT_FOUND(100),
+    CATEGORY_NOT_FOUND(100),
+    USER_PAYMENT_TRANSACTION_NOT_FOUND(100),
+    TRANSACTION_NOT_FOUND(100)
+}
