@@ -41,6 +41,9 @@ class ExceptionHandler(
 
             is TransactionNotFoundException -> ResponseEntity.badRequest()
                     .body(exception.getErrorMessage(errorMessage, exception.id))
+
+            is TransactionItemNotFoundException -> ResponseEntity.badRequest()
+                .body(exception.getErrorMessage(errorMessage,exception.id))
         }
     }
 }
@@ -70,15 +73,15 @@ class UserController(private val service: UserService){
 
 @RestController
 @RequestMapping("UserPaymentTransaction")
-class UserPaymentTransactionController(private val service: UserPaymentTransactionService){
+class UserPaymentTransactionController(private val service: UserPaymentTransactionService) {
     @PostMapping
     fun create(@RequestBody dto: UserPaymentTransactionCreateDto) = service.create(dto)
 
-    @GetMapping
-    fun getAll(pageable: Pageable): Page<GetOneUserPaymentTransactionDto> = service.getAll(pageable)
-
     @GetMapping("{id}")
-    fun getOne(@PathVariable id: Long): GetOneUserPaymentTransactionDto = service.getOne(id)
+    fun getOne(@PathVariable id: Long): GetOneTransactionItem = service.getOne(id)
+
+    @GetMapping
+    fun getAll(pageable: Pageable): Page<GetOneTransactionItem> = service.getAll(pageable)
 }
 
 @RestController

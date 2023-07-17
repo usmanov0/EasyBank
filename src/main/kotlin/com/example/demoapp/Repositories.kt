@@ -51,11 +51,17 @@ interface UserRepository : BaseRepository<User>{
     fun existsByUserName(username: String): Boolean
     fun existsByIdAndDeletedFalse(id: Long): Boolean
 
+    fun findByUserID (userId: Long): List<UserPaymentTransaction>
+
+
+    override fun existsById(userId: Long): Boolean
+
 }
 
 interface UserPaymentTransactionRepository: BaseRepository<UserPaymentTransaction>{
     fun existsByIdAndDeletedFalse(id: Long): Boolean
 
+    fun findByUserID (userId: Long): List<UserPaymentTransaction>
 
 
 }
@@ -65,6 +71,7 @@ interface  CategoryRepository: BaseRepository<Category>{
 
 }
 interface ProductRepository: BaseRepository<Product>{
+    fun existsByName(name: String):Boolean
     fun existsByIdAndDeletedFalse(id: Long): Boolean
 
 }

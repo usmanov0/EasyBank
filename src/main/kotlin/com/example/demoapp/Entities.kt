@@ -36,7 +36,7 @@ class UserPaymentTransaction(
 @Entity
 class Category(
         var name : String,
-        var order : Long,
+        var ordered : Long,
         var description : String
 ): BaseEntity()
 
@@ -49,8 +49,8 @@ class Product(
 
 @Entity
 class Transaction(
+        var date : Date?,
         var totalAmount : Long,
-        var date : LocalDate,
         @ManyToOne var user: User
 ) : BaseEntity()
 

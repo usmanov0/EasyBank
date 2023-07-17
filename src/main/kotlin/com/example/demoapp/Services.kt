@@ -6,7 +6,6 @@ import org.springframework.stereotype.Service
 import org.springframework.data.domain.Pageable
 import java.math.BigDecimal
 import java.util.Date
-import kotlin.system.exitProcess
 
 interface UserService{
     fun makePayment(id: Long, amount: BigDecimal)
@@ -14,12 +13,14 @@ interface UserService{
     fun getOne(id: Long) : GetOneUserDto
     fun getAll(pageable: Pageable) : Page<GetOneUserDto>
     fun delete(id:Long)
+    fun addBalance(id: Long, sum: BigDecimal)
+    fun userHistory(id: Long): List<GetOneUserDto>
 }
 
 interface UserPaymentTransactionService{
     fun create(dto: UserPaymentTransactionCreateDto)
-    fun getOne(id: Long) : GetOneUserPaymentTransactionDto
-    fun getAll(pageable: Pageable) : Page<GetOneUserPaymentTransactionDto>
+    fun getOne(id: Long) : GetOneTransactionItem
+    fun getAll(pageable: Pageable) : Page<GetOneTransactionItem>
 }
 
 interface CategoryService{
@@ -45,10 +46,8 @@ interface TransactionService{
 
 interface TransactionItemService{
     fun create(dto: TransactionItemCreateDto)
-    fun update(dto: TransactionItemUpdateDto)
     fun getOne(id: Long) : GetOneTransactionItem
     fun getAll(pageable: Pageable) : Page<GetOneTransactionItem>
-    fun delete(id: Long)
 }
 
 
@@ -56,7 +55,8 @@ interface TransactionItemService{
 @Service
 class UserServiceImpl(
         private val userRepository: UserRepository,
-        private val userPaymentTransactionRepository: UserPaymentTransactionRepository
+        private val userPaymentTransactionRepository: UserPaymentTransactionRepository,
+
 ):UserService {
 
         override fun makePayment(id: Long, amount: BigDecimal) {
@@ -93,8 +93,27 @@ class UserServiceImpl(
             userRepository.trash(id) ?: throw UserNotFoundException(id)
         }
 
+    override fun addBalance(id: Long, sum: BigDecimal) {
+        val user = userRepository.findByIdAndDeletedFalse(id)?: throw UserNotFoundException(id)
+
+        if (sum.toDouble() < 0){
+            throw UserNotFoundException(id)
+        }
+        user.balance += sum
+        userRepository.save(user)
+    }
+
+    override fun userHistory(id: Long):  List<GetOneUserDto> {
+        val  userPayment = userPaymentTransactionRepository.findByUserID(id)
+        return userPayment.map{
+            UserPaymentDto.toDto(it)
+        }
+
+    }
+
 }
 
+@Service
 class UserPaymentTransactionServiceImpl(
         private val userPaymentRepository: UserPaymentTransactionRepository,
         private val userRepository: UserRepository,
@@ -112,12 +131,13 @@ class UserPaymentTransactionServiceImpl(
 //                userPaymentRepository.save(toEntity())
             }
         }
-    override fun getOne(id: Long) = userPaymentRepository.findByIdAndDeletedFalse(id)?. let { GetOneUserPaymentTransactionDto.toDto(it) }
+    override fun getOne(id: Long) = userPaymentRepository.findByIdAndDeletedFalse(id)?. let { GetOneTransactionItem.toDto(it) }
             ?: throw UserPaymentTransactionNotFoundException(id)
 
-    override fun getAll(pageable: Pageable) = userPaymentRepository.findAllNotDeleted(pageable).map { GetOneUserPaymentTransactionDto.toDto(it) }
+    override fun getAll(pageable: Pageable) = userPaymentRepository.findAllNotDeleted(pageable).map { GetOneTransactionItem.toDto(it) }
 }
 
+@Service
 class CategoryServiceImpl(
         private val categoryRepository: CategoryRepository
 ): CategoryService{
@@ -131,7 +151,7 @@ class CategoryServiceImpl(
         val category = categoryRepository.findByIdAndDeletedFalse(id) ?: throw CategoryNotFoundException(id)
         dto.run {
             name?.let { category.name = it }
-            order?.let { category.order = it }
+            order?.let { category.ordered = it }
             description?.let { category.description = it }
         }
     }
@@ -148,6 +168,8 @@ class CategoryServiceImpl(
         categoryRepository.trash(id) ?: throw CategoryNotFoundException(id)
     }
 }
+
+@Service
 class ProductServiceImpl(
         private val productRepository: ProductRepository,
         private val categoryRepository: CategoryRepository,
@@ -184,35 +206,41 @@ class ProductServiceImpl(
 
 
 
-class TransactionServiceImpl(private val transactionRepository: TransactionRepository):TransactionService{
-    override fun getAll(pageable: Pageable): Page<GetOneTransactionDto> {
-             transactionRepository.findAllNotDeleted(pageable).map { GetOneTransactionDto }
-    }
+@Service
+class TransactionServiceImpl(private val transactionRepository: TransactionRepository):TransactionService {
+    override fun getAll(pageable: Pageable): Page<GetOneTransactionDto> =
+        transactionRepository.findAllNotDeleted(pageable).map {
+            it.user.id?.let { userId -> GetOneTransactionDto(it.createdDate, it.totalAmount,userId) }
+        }
 }
 
+@Service
 class TransactionItemServiceImpl(
+    private val entityManager: EntityManager,
+    private val productRepository: ProductRepository,
+    private val transactionItemRepository: TransactionItemRepository
 
 ):TransactionItemService
 {
     override fun create(dto: TransactionItemCreateDto) {
-        TODO("Not yet implemented")
-    }
+            dto.run {
+                val product = productId.let {
+                    productRepository.existsByIdAndDeletedFalse(it).runIfFalse { throw ProductNotFoundException(it) }
+                    entityManager.getReference(Product::class.java, it)}
+                }
+            }
 
-    override fun update(dto: TransactionItemUpdateDto) {
-        TODO("Not yet implemented")
-    }
 
     override fun getOne(id: Long): GetOneTransactionItem {
-        TODO("Not yet implemented")
+        return transactionItemRepository.findByIdAndDeletedFalse(id)?.let {GetOneTransactionItem.toDto(it)  }
+            ?: throw TransactionItemNotFoundException(id)
     }
 
     override fun getAll(pageable: Pageable): Page<GetOneTransactionItem> {
-        TODO("Not yet implemented")
+        return transactionItemRepository.findAllNotDeleted(pageable).map { GetOneTransactionItem.toDto(it) }
     }
 
-    override fun delete(id: Long) {
-        TODO("Not yet implemented")
-    }
+
 }
 
 

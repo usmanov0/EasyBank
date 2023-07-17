@@ -47,21 +47,16 @@ data class UserPaymentTransactionCreateDto(
             user = entityManager.getReference(User::class.java, userId)
     )
 }
-data class UserPaymentUpdateDto(
+data class UserPaymentDto(
         val amount: BigDecimal,
         val date: LocalDate,
         val userId: User
 )
-data class GetOneUserPaymentTransactionDto(
-        val amount: BigDecimal,
-        val date: Date,
-        val user: User
-)
 {
     companion object{
-        fun toDto(userPaymentTransaction: UserPaymentTransaction) : GetOneUserPaymentTransactionDto{
-            return userPaymentTransaction.run {
-                GetOneUserPaymentTransactionDto(amount,date,user)
+        fun toDto(user: User) : GetOneUserDto{
+            return user.run {
+                GetOneUserDto(fullName,userName,balance)
             }
         }
     }
@@ -94,7 +89,7 @@ data class GetOneCategoryDto(
     companion object{
         fun toDto(category: Category) : GetOneCategoryDto{
             return category.run {
-                GetOneCategoryDto(name,order,description)
+                GetOneCategoryDto(name,ordered,description)
             }
         }
     }
@@ -133,31 +128,27 @@ data class GetOneProductDto(
 }
 
 data class TransactionCreateDto(
+        val date : Date?,
         val totalAmount : Long,
-        val date : LocalDate,
         val userId : User
 ){
     fun toEntity(entityManager: EntityManager) = Transaction(
-            totalAmount,
             date,
+            totalAmount,
             user = entityManager.getReference(User::class.java, userId)
     )
 }
-data class TransactionUpdateDto(
-        val totalAmount: Long,
-        val date: LocalDate,
-        val userId: User
-)
+
 data class GetOneTransactionDto(
-        val totalAmount: Long,
-        val date: LocalDate,
-        val userId: User
+    val date: Date?,
+    val totalAmount: Long,
+    val userId: Long?
 )
 {
     companion object{
         fun toDto(transaction: Transaction) : GetOneTransactionDto{
             return transaction.run{
-                GetOneTransactionDto(totalAmount,date,user)
+                GetOneTransactionDto(date,totalAmount,user.id)
             }
         }
     }

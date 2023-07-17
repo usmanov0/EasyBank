@@ -49,3 +49,8 @@ class UserPaymentTransactionNotFoundException(val id: Long) : DemoException() {
 class TransactionNotFoundException(val id: Long) :DemoException() {
     override fun errorType() = ENUM.TRANSACTION_NOT_FOUND
 }
+
+class TransactionItemNotFoundException(val id: Long): DemoException(){
+    override fun errorType() = ENUM.TRANSACTION_ITEM_NOT_FOUND
+
+}
