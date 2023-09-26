@@ -10,6 +10,7 @@ import java.util.Date
 interface UserService{
     fun makePayment(id: Long, amount: BigDecimal)
     fun update(id: Long, dto: UserUpdateDto)
+
     fun getOne(id: Long) : GetOneUserDto
     fun getAll(pageable: Pageable) : Page<GetOneUserDto>
     fun delete(id:Long)
